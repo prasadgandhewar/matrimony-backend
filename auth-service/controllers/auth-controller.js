@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { addUserInDB, findUserByEmail, findUserById } from '../services/user-db.service.js';
 import { generateToken, verifyToken } from '../services/auth.service.js';
-import { getCache, setCache } from '../services/cache.service.js';
+import { deleteCache, getCache, setCache } from '../services/cache.service.js';
 
 export default async function registerUser(req, res) {
     const { password, email, firstName, lastName, mobileNumber } = req.body;
@@ -39,26 +39,22 @@ export async function loginUser(req, res) {
 }
 
 export async function getUserProfile(req, res) {
-    const token = req.cookies.auth_token;
-    if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
-    const userId = verifyToken(token);
-    if (!userId) {
-        return res.status(401).json({ message: 'Invalid token' });
-    }
-    const user = await getCache(`user_${userId?.id}`);
+    const userId = req.userId;
+    const user = await getCache(`user_${userId}`);
     if (!user) {
-        const userFromDb = await findUserById(userId?.id);
-        setCache(`user_${userId?.id}`, JSON.stringify(userFromDb), 3600);
+        const userFromDb = await findUserById(userId);
+        setCache(`user_${userId}`, JSON.stringify(userFromDb), 3600);
         res.status(200).json({ user: userFromDb });
     }
     console.log('Decoded user from token:', user);
     res.status(200).json({ user: JSON.parse(user) });
 }
 
-export function logoutUser(req, res) {
+export async function logoutUser(req, res) {
+    const userId = req.userId;
     // Implement logout logic here
+    res.clearCookie("auth_token");
+    await deleteCache(`user_${userId}`);
     res.status(200).json({ message: 'Logout successful' });
 }
 

@@ -1,3 +1,4 @@
+import { verifyToken } from "../services/auth.service.js";
 
 export function validateRequest(req, res, next, schema) {
     try {
@@ -13,4 +14,17 @@ export function validateRequest(req, res, next, schema) {
             })),
         });
     }
+}
+
+export function authenticateUser(req, res, next) {
+    const token = req.cookies.auth_token;
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const userId = verifyToken(token);
+    if (!userId) {
+        return res.status(401).json({ message: 'Invalid token' });
+    }
+    req.userId = userId?.id;
+    next();
 }
