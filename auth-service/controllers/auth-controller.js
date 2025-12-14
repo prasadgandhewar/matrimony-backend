@@ -7,7 +7,6 @@ export default async function registerUser(req, res) {
     const { password, email, firstName, lastName, mobileNumber } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
     const user = await findUserByEmail(email);
-    console.log('user found during registration:', user);
     if (user) {
         return res.status(409).json({ message: 'User already exists' });
     }
